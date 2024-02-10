@@ -337,7 +337,10 @@ module.exports = grammar({
 
     variant_type: $ => prec.left(seq(
       optional('|'),
-      barSep1($.variant_declaration),
+      barSep1(choice(
+        $.variant_declaration,
+        $.variant_type_spread,
+      )),
     )),
 
     variant_declaration: $ => prec.right(seq(
@@ -350,6 +353,11 @@ module.exports = grammar({
       '(',
       commaSep1t($._type),
       ')',
+    ),
+
+    variant_type_spread: $ => seq(
+      '...',
+      $.type_identifier,
     ),
 
     polyvar_type: $ => prec.left(seq(
@@ -725,7 +733,13 @@ module.exports = grammar({
     call_arguments: $ => seq(
       '(',
       optional($.uncurry),
-      optional(commaSep1t($._call_argument)),
+      choice(
+        optional(commaSep1t($._call_argument)),
+        seq(
+          optional(commaSep1($._call_argument)),
+          optional(seq(',', $.partial_application)),
+        ),
+      ),
       ')'
     ),
 
@@ -1439,6 +1453,7 @@ module.exports = grammar({
     lparen: $ => alias($._lparen, '('),
     rparen: $ => alias($._rparen, ')'),
     uncurry: $ => '.',
+    partial_application: $ => '...',
 
     _reserved_identifier: $ => choice(
       'async',
