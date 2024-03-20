@@ -468,7 +468,7 @@ module.exports = grammar({
       choice('export', 'let'),
       optional('rec'),
       sep1(
-        seq(repeat($._newline), 'and'),
+        seq(repeat($._newline_and_comment), 'and'),
         $.let_binding
       )
     ),
