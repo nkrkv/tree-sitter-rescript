@@ -14,23 +14,43 @@
   (list_pattern)
 ] @type
 
+((type_identifier) @type.builtin
+  (#any-of? @type.builtin
+    "int" "char" "string" "float" "bool" "unit"))
+
+
+((unit) @constant.builtin
+  (#set! "priority" 105))
+
 [
   (variant_identifier)
   (polyvar_identifier)
-] @constant
+] @constructor
 
 (record_type_field (property_identifier) @property)
 (record_field (property_identifier) @property)
 (object (field (property_identifier) @property))
 (object_type (field (property_identifier) @property))
-(member_expression (property_identifier) @property)
-(module_identifier) @namespace
+(module_identifier) @module
+
+(member_expression (property_identifier) @variable.member)
+
+(record_pattern
+  (value_identifier) @variable.member)
+
+(value_identifier_path
+  (module_identifier)
+  (value_identifier) @variable.member)
+
+(labeled_argument
+   label: (value_identifier) @property)
+
 
 ; Parameters
 ;----------------
 
-(list_pattern (value_identifier) @parameter)
-(spread_pattern (value_identifier) @parameter)
+(list_pattern (value_identifier) @variable.parameter)
+(spread_pattern (value_identifier) @variable.parameter)
 
 ; String literals
 ;----------------
@@ -40,11 +60,8 @@
   (template_string)
 ] @string
 
-(template_substitution
-  "${" @punctuation.bracket
-  "}" @punctuation.bracket) @embedded
 
-(character) @string.special
+(character) @character
 (escape_sequence) @string.escape
 
 ; Other literals
@@ -56,8 +73,8 @@
 ] @constant.builtin
 
 (number) @number
-(polyvar) @constant
-(polyvar_string) @constant
+(polyvar) @constructor
+(polyvar_string) @constructor
 
 ; Functions
 ;----------
@@ -66,21 +83,45 @@
 [
  (parameter (value_identifier))
  (labeled_parameter (value_identifier))
-] @parameter
+] @variable.parameter
 
 ; single parameter with no parens
-(function parameter: (value_identifier) @parameter)
+(function parameter: (value_identifier) @variable.parameter)
 
 ; first-level descructuring (required for nvim-tree-sitter as it only matches direct
 ; children and the above patterns do not match destructuring patterns in NeoVim)
-(parameter (tuple_pattern (tuple_item_pattern (value_identifier) @parameter)))
-(parameter (array_pattern (value_identifier) @parameter))
-(parameter (record_pattern (value_identifier) @parameter))
+(parameter (tuple_pattern (tuple_item_pattern (value_identifier) @variable.parameter)))
+(parameter (array_pattern (value_identifier) @variable.parameter))
+(parameter (record_pattern (value_identifier) @variable.parameter))
+
+; function identifier in let binding
+(let_binding 
+  pattern: (value_identifier) @function
+  body: (function))
+
+; function calls
+
+(call_expression 
+  function: (value_identifier_path
+    _
+    (value_identifier) @function.call))
+
+(call_expression 
+  function: (value_identifier) @function.call)
+
+; highlight the right-hand side of a pipe operator as a function call
+(pipe_expression
+  _
+  [(value_identifier_path
+    _
+    (value_identifier) @function.call)
+    (value_identifier) @function.call])
+
 
 ; Meta
 ;-----
 
-(decorator_identifier) @annotation
+(decorator_identifier) @attribute
 
 (extension_identifier) @keyword
 ("%") @keyword
@@ -89,27 +130,37 @@
 ;-----
 
 (subscript_expression index: (string) @property)
-(polyvar_type_pattern "#" @constant)
+(polyvar_type_pattern "#" @constructor)
 
 [
-  ("include")
-  ("open")
-] @include
+  "include"
+  "open"
+] @keyword.import
+
 
 [
-  "as"
+   "as"
+   "private"
+   "mutable"
+   "rec"
+] @keyword.modifier
+
+[
+  "type"
+] @keyword.type
+
+[
+  "and"
+  "with"
+] @keyword.operator
+
+[
   "export"
   "external"
   "let"
   "module"
-  "mutable"
-  "private"
-  "rec"
-  "type"
-  "and"
   "assert"
   "await"
-  "with"
   "lazy"
   "constraint"
 ] @keyword
@@ -123,17 +174,17 @@
   "else"
   "switch"
   "when"
-] @conditional
+] @keyword.conditional
 
 [
   "exception"
   "try"
   "catch"
-] @exception
+] @keyword.exception
 
 (call_expression
-  function: (value_identifier) @exception
-  (#eq? @exception "raise"))
+  function: (value_identifier) @keyword.exception
+   (#eq? @keyword.exception "raise"))
 
 [
   "for"
@@ -141,7 +192,7 @@
   "to"
   "downto"
   "while"
-] @repeat
+] @keyword.repeat
 
 [
   "."
@@ -174,6 +225,7 @@
   "|>"
   ":>"
   "+="
+  "=>"
   (uncurry)
 ] @operator
 
@@ -190,6 +242,10 @@
   "]"
 ] @punctuation.bracket
 
+(template_substitution
+  "${" @punctuation.special
+   "}" @punctuation.special) @embedded
+
 (polyvar_type
   [
    "["
@@ -201,12 +257,11 @@
 [
   "~"
   "?"
-  "=>"
   ".."
   "..."
 ] @punctuation.special
 
-(ternary_expression ["?" ":"] @operator)
+(ternary_expression ["?" ":"] @keyword.conditional.ternary)
 
 ; JSX
 ;----------

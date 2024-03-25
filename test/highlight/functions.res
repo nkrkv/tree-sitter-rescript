@@ -1,12 +1,13 @@
 let inc = n => n + 1
-//        ^ parameter
+//        ^ variable.parameter
 //          ^ punctuation.special
+//  ^ function
 
 let fn = (a, (b, c), {d, e}, [f, g]) => a + b + c + d + e + f + g
-//        ^ parameter
-//            ^ parameter
-//                    ^ parameter
-//                            ^ parameter
+//        ^ variable.parameter
+//            ^ variable.parameter
+//                    ^ variable.parameter
+//                            ^ variable.parameter
 
 let uncurry = (. u, .x) => (u, x)
 //             ^ operator
